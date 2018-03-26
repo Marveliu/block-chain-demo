@@ -5,7 +5,6 @@ import com.simon.blockchain.util.CryptologyUtil;
 import com.simon.blockchain.util.TreeUtil;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -21,7 +20,7 @@ public class Block {
     public String merkleRoot;
     //区块中的数据
     public String data;
-
+    // 交易记录
     public List<Transaction> transactions = new ArrayList<>();
     //时间戳
     private long timeStamp;
@@ -32,17 +31,20 @@ public class Block {
     public Block(String data, String previousHash) {
         this.data = data;
         this.previousHash = previousHash;
-        this.timeStamp = new Date().getTime();
+        this.timeStamp = System.currentTimeMillis();
         this.hash = calculateHash();
     }
 
     //block实际使用的构造函数
     public Block(String previousHash){
         this.previousHash = previousHash;
-        this.timeStamp = new Date().getTime();
+        this.timeStamp = System.currentTimeMillis();
+
+        // 自身的hash值
         this.hash  = calculateHash();
     }
 
+    // 根据上一个区块的hash值，自身的时间戳，随机数和merkleRoot进行计算这个区块的hash
     public String calculateHash() {
         String calculatedHash = CryptologyUtil.applySha256(
                 previousHash +
@@ -54,13 +56,14 @@ public class Block {
     }
 
     /**
-     * 不停的重复计算hash，直至前difficulty位是0
-     * @param difficulty
+     * 不停的重复计算hash，直至前difficulty位是
+     * 只是简单地挖矿模型，
      */
     public void mineBlock(int difficulty){
         merkleRoot = TreeUtil.getMerkleRoot(transactions);
         String target = new String(new char[difficulty]).replace('\0','0');
         while (!hash.substring(0,difficulty).equals(target)){
+            System.out.println("hash.substring(0,difficulty)："+hash.substring(0,difficulty));
             //可以用random值作为nonce进行尝试
             nonce++;
             hash = calculateHash();

@@ -1,13 +1,12 @@
 package com.simon.blockchain.transaction;
 
+import com.simon.blockchain.Main;
 import com.simon.blockchain.util.CryptologyUtil;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.simon.blockchain.Main;
 
 /**
  * Created by simon on 2018/2/9.
@@ -49,39 +48,46 @@ public class Transaction {
         return CryptologyUtil.verifyECDSASig(sender,data,signature);
     }
 
+    // 进行交易，但是会做一些校验
     public boolean processTransaction(){
 
+        // 计算签名
         if(!verifySignature()){
             System.out.println("Transaction Signature failed to verify");
             return false;
         }
 
+        // UTXO 比较
         for(TransactionInput input:inputs){
             input.UTXO = Main.UTXOs.get(input.transactionOutputId);
         }
 
+        // 最低限度交易校验
         if(getInputValue()< Main.minimumTransaction){
             System.out.println("Transaction Inputs too small: " + getInputValue());
             return false;
         }
 
+        // 计算本次交易的hash
         transactionId = calculateHash();
 
+        // 计算余额
         float leftOver = getInputValue() - value;
         if(leftOver < 0.0){
             System.out.println("sum of Inputs is smaller than value, sum:" + getInputValue()+",value:"+value);
             return false;
         }
 
+        // 数据记录包括：把UTXOs分解成，1. 余额给自己，2.转账给别人
         outputs.add(new TransactionOutput(this.recipient,value,transactionId));
         outputs.add(new TransactionOutput(this.sender,leftOver,transactionId));
 
-        //将所有output加入到hashmap
+        //将所有output加入到hashmap，即区块链UTXOs总数据库
         for(TransactionOutput output:outputs){
             Main.UTXOs.put(output.id,output);
         }
 
-        //将已经被使用了的input从hashmap中删除
+        //将已经被使用了的input从hashmap中删除,删除已经使用的UTXOs
         for(TransactionInput input:inputs){
             if(input.UTXO!=null){
                 Main.UTXOs.remove(input.UTXO.id);

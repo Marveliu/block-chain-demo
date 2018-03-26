@@ -37,6 +37,8 @@ public class Main {
 
 
     public static void main(String args[]) {
+
+        // java加密框架：https://www.cnblogs.com/f1194361820/p/4262507.html
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         //mineTest();
         //transactionTest();
@@ -84,13 +86,17 @@ public class Main {
         System.out.println("\nIs signature verified:" + transaction.verifySignature());
 
 
+
     }
 
     //构建区块链系统完整流程测试
     public static void genesisTest(){
         Wallet baseCoin = new Wallet();
+
+        //创建两个钱包
         wallet1 = new Wallet();
         wallet2 = new Wallet();
+
         //构建创世区块
         Block genesis = genesis(baseCoin,wallet1);
 
@@ -123,11 +129,17 @@ public class Main {
 
     public static Block genesis(Wallet baseCoin,Wallet wallet){
 
-        //创世交易不需要任何input
+        // 创世交易不需要任何input，交易双方的公钥
         genesisTransaction = new Transaction(baseCoin.publicKey,wallet.publicKey,10f,null);
+
+        // from 私钥进行签名
         genesisTransaction.generateSignature(baseCoin.privateKey);
         genesisTransaction.transactionId = "0";
+
+        // 创世区块没有sender
         genesisTransaction.outputs.add(new TransactionOutput(genesisTransaction.recipient,genesisTransaction.value,genesisTransaction.transactionId));
+
+        // 添加到UTF0
         UTXOs.put(genesisTransaction.outputs.get(0).id,genesisTransaction.outputs.get(0));
 
         //开始构建创世区块
@@ -155,16 +167,20 @@ public class Main {
             previousBlock = blockChain.get(i - 1);
 
             //首先校验当前区块是否有效
+
+            // 重新计算hash
             if (!currentBlock.hash.equals(currentBlock.calculateHash())) {
                 System.out.println("Current Hashes not equal");
                 return false;
             }
 
+            // 是否正确链接
             if (!previousBlock.hash.equals(currentBlock.previousHash)) {
                 System.out.println("Previous Hashes not equal");
                 return false;
             }
 
+            // hash头是否满足difficulty，即是否挖过矿
             if (!currentBlock.hash.substring(0, difficulty).equals(hashTarget)) {
                 System.out.println("This block has not been mined");
                 return false;
@@ -174,6 +190,7 @@ public class Main {
             for(int j=0;j<currentBlock.transactions.size();j++){
                 Transaction currentTransaction = currentBlock.transactions.get(j);
 
+                // 验证签名
                 if(!currentTransaction.verifySignature()){
                     System.out.println("Signature of "+ j +" transaction is invalid");
                     return false;
@@ -225,6 +242,7 @@ public class Main {
     }
 
     private static void addBlock(Block block){
+        // 挖空
         block.mineBlock(difficulty);
         blockChain.add(block);
     }

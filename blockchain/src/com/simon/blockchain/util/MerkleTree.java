@@ -15,6 +15,7 @@ public class MerkleTree {
     public MerkleTree(List<Transaction> transactions) {
         txs = new ArrayList<>();
         for (int i = 0; i < transactions.size(); i++) {
+            // 添加交易的hash
             txs.add(transactions.get(i).transactionId);
         }
         root = "";

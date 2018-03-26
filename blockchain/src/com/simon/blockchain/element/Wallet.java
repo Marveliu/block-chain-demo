@@ -23,6 +23,7 @@ public class Wallet {
     public Map<String,TransactionOutput> UTXOs = new HashMap<>();
 
     public Wallet(){
+        System.out.println("KeyPari generating..");
         generateKeyPair();
     }
 
@@ -31,6 +32,7 @@ public class Wallet {
      */
     public void generateKeyPair(){
         try {
+            // ECDSA 椭圆曲线算法
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECDSA","BC");
             SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
             ECGenParameterSpec ecSpec = new ECGenParameterSpec("prime192v1");
@@ -52,9 +54,12 @@ public class Wallet {
      */
     public float getBalance(){
         float total = 0;
+
+        // 从UTFO中计算余额
         for (Map.Entry<String, TransactionOutput> item: Main.UTXOs.entrySet()){
             TransactionOutput UTXO = item.getValue();
             if(UTXO.isMine(publicKey)) {
+                // 持久化
                 this.UTXOs.put(UTXO.id,UTXO);
                 total += UTXO.value ;
             }
@@ -64,11 +69,13 @@ public class Wallet {
 
     /**
      * 发起一笔转账
-     * @param _recipient
-     * @param value
+     * @param _recipient 接收方的公钥
+     * @param value 转账金额
      * @return
      */
     public Transaction sendFunds(PublicKey _recipient, float value) {
+
+        // 账户余额是够足够
         if (getBalance() < value) {
             System.out.println();
         }
@@ -78,6 +85,7 @@ public class Wallet {
 
         for (Map.Entry<String, TransactionOutput> item : UTXOs.entrySet()) {
             TransactionOutput UTXO = item.getValue();
+            // 增加总额
             total += UTXO.value;
             inputs.add(new TransactionInput(UTXO.id));
             if (total > value) break;
@@ -88,6 +96,7 @@ public class Wallet {
         newTransaction.generateSignature(privateKey);
 
         for (TransactionInput input : inputs) {
+            // 删除分解钱的UTXOs,因为之后还会从总体的UTXOs上面进行查询并且持久化
             UTXOs.remove(input.transactionOutputId);
         }
 
